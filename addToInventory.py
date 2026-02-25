@@ -2,7 +2,7 @@ import csv
 import json
 
 # File paths
-csv_file_path = 'New_Inventory.csv'
+csv_file_path = '2_New_Inventory.csv'
 json_file_path = 'Inventory.json'
 
 # 1. Load the existing JSON data
@@ -11,23 +11,26 @@ with open(json_file_path, 'r') as json_file:
 
 # 2. Read the CSV and update the dictionary
 with open(csv_file_path, 'r') as csv_file:
-    csv_reader = csv.reader(csv_file)
+    # This replaces tabs with commas on the fly before the CSV reader processes the line
+    cleaned_lines = (line.replace('\t', ',') for line in csv_file)
+    csv_reader = csv.reader(cleaned_lines)
     
-    # Uncomment the line below if your CSV file has a header row (e.g., "Item ID", "Quantity")
-    # next(csv_reader, None) 
-
     for row in csv_reader:
-        # Skip empty rows
-        if not row:
+        # Clean out any empty strings caused by consecutive delimiters (e.g., a tab next to a comma)
+        # and strip extra spaces from the remaining elements
+        cleaned_row = [item.strip() for item in row if item.strip()]
+        
+        # Skip empty rows or malformed rows that don't have both an ID and a Quantity
+        if len(cleaned_row) < 2:
             continue 
         
-        item_id = str(row[0]).strip()
+        item_id = str(cleaned_row[0])
         
         # Ensure the quantity is treated as an integer
         try:
-            quantity = int(row[1].strip())
+            quantity = int(cleaned_row[1])
         except ValueError:
-            print(f"Skipping invalid quantity for Item ID {item_id}: '{row[1]}'")
+            print(f"Skipping invalid quantity for Item ID {item_id}: '{cleaned_row[1]}'")
             continue
 
         # 3. Add or update the inventory logic
